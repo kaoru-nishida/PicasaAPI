@@ -1,6 +1,7 @@
 package jp.kaoru.picasaapi;
 
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -43,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
                 URL url;
                 HttpURLConnection urlConnection = null;
                 try {
-                    url = new URL("http://picasaweb.google.com/data/feed/base/user/kaoru.nish?alt=json&max-results=9");
+                    url = new URL("http://picasaweb.google.com/data/feed/base/user/kaoru.nish?alt=json&max-results=20");
                     urlConnection = (HttpURLConnection) url.openConnection();
                     InputStream in = urlConnection.getInputStream();
                     int statusCode = urlConnection.getResponseCode();
@@ -62,37 +63,38 @@ public class MainActivity extends AppCompatActivity {
                     }
                     responseData = sb.toString();
                     Log.i(TAG, "すていたすこーど："+String.valueOf(statusCode));
-                    Log.i(TAG,responseData);
-                    try {
-                        JSONObject json = new JSONObject(responseData);
-                        final String Title = json.getJSONObject("feed").getJSONObject("title").getString("$t");
-                        //json.getJSONArray("entry").get(1);
-                        JSONArray entries = json.getJSONObject("feed").getJSONArray("entry");
-                        final ArrayList<Entry> list = new ArrayList<>();
-                        for (int i = 0; i < entries.length(); i++) {
-                            JSONObject data = entries.getJSONObject(i);
-                            Entry entry = new Entry();
-                            entry.setId(i);
-                            entry.setContent(data.getJSONObject("media$group").getJSONArray("media$content").getJSONObject(0).getString("url"));
-                            entry.setPublished(data.getJSONObject("published").getString("$t"));
-                            entry.setThumbnail(data.getJSONObject("media$group").getJSONArray("media$thumbnail").getJSONObject(0).getString("url"));
-                            entry.setTitle(data.getJSONObject("title").getString("$t"));
-                            entry.setUpdated(data.getJSONObject("updated").getString("$t"));
-                            list.add(entry);
-                        }
-
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                setTitle(Title);
-                                ListView listView = (ListView)findViewById(R.id.ListView);
-                                EntryAdapter adapter = new EntryAdapter(MainActivity.this);
-                                adapter.setEntryList(list);
-                                listView.setAdapter(adapter);
+                    if(statusCode == 200) {
+                        try {
+                            JSONObject json = new JSONObject(responseData);
+                            final String Title = json.getJSONObject("feed").getJSONObject("title").getString("$t");
+                            //json.getJSONArray("entry").get(1);
+                            JSONArray entries = json.getJSONObject("feed").getJSONArray("entry");
+                            final ArrayList<Entry> list = new ArrayList<>();
+                            for (int i = 0; i < entries.length(); i++) {
+                                JSONObject data = entries.getJSONObject(i);
+                                Entry entry = new Entry();
+                                entry.setId(i);
+                                entry.setContent(data.getJSONObject("media$group").getJSONArray("media$content").getJSONObject(0).getString("url"));
+                                entry.setPublished(data.getJSONObject("published").getString("$t"));
+                                entry.setThumbnail(data.getJSONObject("media$group").getJSONArray("media$thumbnail").getJSONObject(0).getString("url"));
+                                entry.setTitle(data.getJSONObject("title").getString("$t"));
+                                entry.setUpdated(data.getJSONObject("updated").getString("$t"));
+                                list.add(entry);
                             }
-                        });
-                    } catch (JSONException e) {
-                        e.printStackTrace();
+
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    setTitle(Title);
+                                    ListView listView = (ListView) findViewById(R.id.ListView);
+                                    EntryAdapter adapter = new EntryAdapter(MainActivity.this);
+                                    adapter.setEntryList(list);
+                                    listView.setAdapter(adapter);
+                                }
+                            });
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
